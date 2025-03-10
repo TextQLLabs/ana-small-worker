@@ -4,14 +4,21 @@ import {
   GetStatementResultCommand,
   DescribeStatementCommand
 } from '@aws-sdk/client-redshift-data';
-import { RedshiftCredentials, SqlQueryResult } from '../types';
+import { DatabaseCredentials, SqlQueryResult } from '../types';
+import { executePostgresSqlQuery } from './postgres';
 
 export async function executeSqlQuery(
-  credentials: RedshiftCredentials,
+  credentials: DatabaseCredentials,
   query: string,
-  awsAccessKeyId: string,
-  awsSecretAccessKey: string
+  awsAccessKeyId?: string,
+  awsSecretAccessKey?: string
 ): Promise<SqlQueryResult> {
+  // Route to PostgreSQL service if database type is postgres
+  if (credentials.databaseType === 'postgres') {
+    return executePostgresSqlQuery(credentials, query);
+  }
+  
+  // Continue with Redshift connection for other cases
   try {
     if (!credentials.host || !credentials.database || !credentials.user) {
       return {
