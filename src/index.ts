@@ -71,8 +71,8 @@ export default {
           // Determine which credentials to use
           let credentials: RedshiftCredentials;
 
-          if (redshiftCredentials === null) {
-            // Default to SAMPLE-1 if null is provided
+          if (!redshiftCredentials) {
+            // Default to SAMPLE-1 if null or undefined is provided
             const sampleCredentials = getSampleCredentials(env);
 
             if (!sampleCredentials) {
@@ -89,8 +89,8 @@ export default {
             }
 
             credentials = sampleCredentials;
-          } else if (redshiftCredentials && 'id' in redshiftCredentials) {
-            // Use specific sample if id is provided
+          } else if ('id' in redshiftCredentials && typeof redshiftCredentials.id === 'string' && redshiftCredentials.id.includes('SAMPLE')) {
+            // Use specific sample if id contains "SAMPLE"
             const sampleCredentials = getSampleCredentials(env, redshiftCredentials.id);
 
             if (!sampleCredentials) {
@@ -107,27 +107,9 @@ export default {
             }
 
             credentials = sampleCredentials;
-          } else if (redshiftCredentials && 'host' in redshiftCredentials) {
-            // Use provided full credentials
-            credentials = redshiftCredentials as RedshiftCredentials;
           } else {
-            // Fall back to default sample if redshiftCredentials is undefined
-            const sampleCredentials = getSampleCredentials(env);
-
-            if (!sampleCredentials) {
-              return corsify(new Response(JSON.stringify({
-                columns: [],
-                rows: [],
-                error: 'Failed to get default sample credentials'
-              }), {
-                status: 500,
-                headers: {
-                  'Content-Type': 'application/json'
-                }
-              }));
-            }
-
-            credentials = sampleCredentials;
+            // Use provided credentials if they appear to be full credentials
+            credentials = redshiftCredentials as RedshiftCredentials;
           }
 
           const result = await executeSqlQuery(
