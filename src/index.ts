@@ -1,6 +1,6 @@
 import { executeSqlQuery } from './services/redshift';
 import { sendChatRequest } from './services/openai';
-import { DatabaseCredentials } from './types';
+import { RedshiftCredentials } from './types';
 
 // CORS headers for all responses
 const corsHeaders = {
@@ -25,12 +25,13 @@ function corsify(response: Response): Response {
 }
 
 // Get sample credentials from environment based on provided ID
-function getSampleCredentials(env: Env, id: string = 'SAMPLE-1'): DatabaseCredentials | null {
+function getSampleCredentials(env: Env, id: string = 'SAMPLE-1'): RedshiftCredentials | null {
   const envKey = `${id}_REDSHIFT_CREDENTIALS`;
 
   if (!env[envKey]) {
     return null;
   }
+
 
   try {
     const parsed = JSON.parse(env[envKey]);
@@ -40,12 +41,7 @@ function getSampleCredentials(env: Env, id: string = 'SAMPLE-1'): DatabaseCreden
   }
 
   try {
-    const credentials = JSON.parse(env[envKey]);
-    // Set default database type to redshift for backward compatibility
-    if (!credentials.databaseType) {
-      credentials.databaseType = 'redshift';
-    }
-    return credentials;
+    return JSON.parse(env[envKey]);
   } catch (e) {
     return null;
   }
@@ -70,16 +66,12 @@ export default {
       if (path === '/api/query') {
         try {
           const body = await request.json();
-          const { code, redshiftCredentials, databaseCredentials } = body;
+          const { code, redshiftCredentials } = body;
 
           // Determine which credentials to use
-          let credentials: DatabaseCredentials;
+          let credentials: RedshiftCredentials;
 
-          // Check if databaseCredentials is provided first (new format)
-          if (databaseCredentials) {
-            // Use the new format for credentials
-            credentials = databaseCredentials as DatabaseCredentials;
-          } else if (!redshiftCredentials) {
+          if (!redshiftCredentials) {
             // Default to SAMPLE-1 if null or undefined is provided
             const sampleCredentials = getSampleCredentials(env);
 
@@ -116,12 +108,8 @@ export default {
 
             credentials = sampleCredentials;
           } else {
-            // Use provided redshiftCredentials for backward compatibility
-            credentials = redshiftCredentials as DatabaseCredentials;
-            // Set database type to redshift if not specified
-            if (!credentials.databaseType) {
-              credentials.databaseType = 'redshift';
-            }
+            // Use provided credentials if they appear to be full credentials
+            credentials = redshiftCredentials as RedshiftCredentials;
           }
 
           const result = await executeSqlQuery(

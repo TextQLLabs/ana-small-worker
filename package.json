@@ -12,13 +12,11 @@
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.6.4",
 		"@cloudflare/workers-types": "^4.20250303.0",
-		"@types/pg": "^8.11.11",
 		"typescript": "^5.5.2",
 		"vitest": "~2.1.9",
 		"wrangler": "^3.112.0"
 	},
 	"dependencies": {
-		"@aws-sdk/client-redshift-data": "^3.758.0",
-		"pg": "^8.13.3"
+		"@aws-sdk/client-redshift-data": "^3.758.0"
 	}
 }
